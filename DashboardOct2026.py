@@ -28,7 +28,7 @@ st.markdown(
         background: rgba(11, 18, 30, 0.92);
         border: 1px solid rgba(255,255,255,0.06);
         border-radius: 18px;
-        min-height: 180px;
+        min-height: 160px;
         padding: 1.1rem 1.2rem 1.2rem 1.2rem;
         display: flex;
         flex-direction: column;
@@ -81,7 +81,7 @@ except Exception as e:
   st.stop()
 
 # --- BARRA LATERAL (FILTROS) ---
-st.sidebar.header("Filtros de Datos")
+st.sidebar.header("Filtros de Búsqueda")
 
 # Filtro de Fecha
 min_date = df["Order Date"].min().to_pydatetime()
@@ -96,7 +96,7 @@ start_date, end_date = st.sidebar.slider(
 # Filtro de Región
 regiones = sorted(df["Region"].unique())
 regiones_selected = st.sidebar.multiselect(
-    "Selecciona la(s) Región(es):", options=regiones, default=regiones
+    "Selecciona Región(es)", options=regiones, default=regiones
 )
 
 # Filtro de Estado (Dinámico según Región)
@@ -108,11 +108,18 @@ df_filtrado = df[
 
 estados = sorted(df_filtrado["State"].unique())
 estados_selected = st.sidebar.multiselect(
-    "Selecciona el/los Estado(s):", options=estados, default=estados
+    "Selecciona Estado(s)", options=estados, default=estados
 )
 
-# Aplicar filtro final de Estado
 df_filtrado = df_filtrado[df_filtrado["State"].isin(estados_selected)]
+
+# Filtro de Categoría
+categorias = sorted(df_filtrado["Category"].unique())
+categorias_selected = st.sidebar.multiselect(
+    "Selecciona Categoría(s)", options=categorias, default=categorias
+)
+
+df_filtrado = df_filtrado[df_filtrado["Category"].isin(categorias_selected)]
 
 # --- MÉTRICAS CLAVE (KPIs) ---
 def metric_card(title, value):
@@ -128,31 +135,25 @@ def metric_card(title, value):
 
 
 # Pestañas de navegación
-# Tab principal: dashboard actual
-# Tab nueva: mapa de ventas con top 10 estados por ventas
 principal_tab, mapa_ventas_tab = st.tabs(["Dashboard", "mapa de ventas"])
 
 with principal_tab:
   if not df_filtrado.empty:
     total_sales = df_filtrado["Sales"].sum()
     total_profit = df_filtrado["Profit"].sum()
-    avg_margin = (
-        (total_profit / total_sales * 100) if total_sales > 0 else 0
-    )
     total_orders = df_filtrado["Order ID-1"].nunique()
 
-    devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
-    tasa_devolucion = (
-        (devueltos / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
-    )
+    if "Discount" in df_filtrado.columns:
+      avg_discount = df_filtrado["Discount"].mean() * 100
+    else:
+      avg_discount = 0
 
-    cols = st.columns(5)
+    cols = st.columns(4)
     cards = [
         ("Ventas Totales", f"${total_sales:,.2f}"),
-        ("Ganancias Totales", f"${total_profit:,.2f}"),
-        ("Margen de Ganancia", f"{avg_margin:.2f}%"),
+        ("Beneficio Total (Profit)", f"${total_profit:,.2f}"),
+        ("Descuento Promedio", f"{avg_discount:.2f}%"),
         ("Órdenes Únicas", f"{total_orders:,}"),
-        ("Tasa Devolución", f"{tasa_devolucion:.2f}%"),
     ]
 
     for col, (title, value) in zip(cols, cards):
@@ -262,4 +263,3 @@ with mapa_ventas_tab:
     st.plotly_chart(fig_map, use_container_width=True)
 
     st.caption("Gráfico de barras de los 10 estados con mayor volumen de ventas según los filtros actuales.")
-
