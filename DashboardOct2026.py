@@ -129,7 +129,7 @@ if not df_filtrado.empty:
   total_orders = df_filtrado["Order ID-1"].nunique()
 
   # Tasa de devolución
-devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
+  devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
   tasa_devolucion = (
       (devueltos / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
   )
