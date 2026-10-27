@@ -14,7 +14,7 @@ st.markdown("---")
 @st.cache_data
 def load_data():
     file_path = '/content/drive/MyDrive/Colab Notebooks/ADA6/SalidaVentas.xlsx'
-    df = pd.read_excel(file_path)
+    df = pd.read_excel("SalidaVentas.xlsx")
     df['Order Date'] = pd.to_datetime(df['Order Date'])
     df['es devolución?'] = df['es devolución?'].astype(str).str.lower().str.strip()
     return df
