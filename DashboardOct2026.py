@@ -5,6 +5,62 @@ import streamlit as st
 # Configuración de la página
 st.set_page_config(page_title="Dashboard de Ventas", layout="wide")
 
+# Estilo para replicar el dashboard oscuro tipo imagen de referencia
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: #050b12;
+        color: #e5e7eb;
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(17, 24, 39, 0.8);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 0.75rem 1rem 0.9rem 1rem;
+        min-height: 150px;
+        box-shadow: none;
+    }
+
+    div[data-testid="stMetric"] > label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: #e5e7eb !important;
+        padding-bottom: 0.35rem;
+    }
+
+    div[data-testid="stMetric"] > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    div[data-testid="stMetric"] > div > div {
+        font-size: clamp(2rem, 2.3vw, 3rem) !important;
+        font-weight: 700 !important;
+        color: #f8fafc !important;
+        line-height: 1.1;
+    }
+
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        display: none;
+    }
+
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    h1 {
+        color: #f8fafc;
+        margin-bottom: 0.2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Título del Dashboard
 st.title("📈 Dashboard de Análisis de Ventas e Ingresos")
 st.markdown("---")
@@ -73,7 +129,7 @@ if not df_filtrado.empty:
   total_orders = df_filtrado["Order ID-1"].nunique()
 
   # Tasa de devolución
-  devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
+devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
   tasa_devolucion = (
       (devueltos / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
   )
