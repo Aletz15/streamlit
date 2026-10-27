@@ -127,102 +127,139 @@ def metric_card(title, value):
   )
 
 
-if not df_filtrado.empty:
-  total_sales = df_filtrado["Sales"].sum()
-  total_profit = df_filtrado["Profit"].sum()
-  avg_margin = (
-      (total_profit / total_sales * 100) if total_sales > 0 else 0
-  )
-  total_orders = df_filtrado["Order ID-1"].nunique()
+# Pestañas de navegación
+# Tab principal: dashboard actual
+# Tab nueva: mapa de ventas con top 10 estados por ventas
+principal_tab, mapa_ventas_tab = st.tabs(["Dashboard", "mapa de ventas"])
 
-  devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
-  tasa_devolucion = (
-      (devueltos / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
-  )
+with principal_tab:
+  if not df_filtrado.empty:
+    total_sales = df_filtrado["Sales"].sum()
+    total_profit = df_filtrado["Profit"].sum()
+    avg_margin = (
+        (total_profit / total_sales * 100) if total_sales > 0 else 0
+    )
+    total_orders = df_filtrado["Order ID-1"].nunique()
 
-  cols = st.columns(5)
-  cards = [
-      ("Ventas Totales", f"${total_sales:,.2f}"),
-      ("Ganancias Totales", f"${total_profit:,.2f}"),
-      ("Margen de Ganancia", f"{avg_margin:.2f}%"),
-      ("Órdenes Únicas", f"{total_orders:,}"),
-      ("Tasa Devolución", f"{tasa_devolucion:.2f}%"),
-  ]
+    devueltos = df_filtrado[df_filtrado["es devolución?"] == "sí"].shape[0]
+    tasa_devolucion = (
+        (devueltos / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
+    )
 
-  for col, (title, value) in zip(cols, cards):
-      with col:
-          metric_card(title, value)
-else:
-  st.warning("No hay datos que coincidan con los filtros seleccionados.")
-  st.stop()
+    cols = st.columns(5)
+    cards = [
+        ("Ventas Totales", f"${total_sales:,.2f}"),
+        ("Ganancias Totales", f"${total_profit:,.2f}"),
+        ("Margen de Ganancia", f"{avg_margin:.2f}%"),
+        ("Órdenes Únicas", f"{total_orders:,}"),
+        ("Tasa Devolución", f"{tasa_devolucion:.2f}%"),
+    ]
 
-st.markdown("---")
+    for col, (title, value) in zip(cols, cards):
+        with col:
+            metric_card(title, value)
+  else:
+    st.warning("No hay datos que coincidan con los filtros seleccionados.")
+    st.stop()
 
-# --- GRÁFICOS ---
-col_left, col_right = st.columns(2)
+  st.markdown("---")
 
-with col_left:
-  st.subheader("Evolución de Ventas en el Tiempo")
-  df_trend = (
-      df_filtrado.resample("ME", on="Order Date")[["Sales", "Profit"]]
-      .sum()
-      .reset_index()
-  )
-  fig_trend = px.line(
-      df_trend,
-      x="Order Date",
-      y=["Sales", "Profit"],
-      labels={"value": "Monto ($)", "Order Date": "Fecha"},
-      title="Tendencia Mensual de Ventas y Ganancias",
-      color_discrete_sequence=["royalblue", "forestgreen"],
-  )
-  st.plotly_chart(fig_trend, use_container_width=True)
+  # --- GRÁFICOS ---
+  col_left, col_right = st.columns(2)
 
-with col_right:
-  st.subheader("Relación de Ventas vs Ganancia por Transacción")
-  fig_scatter = px.scatter(
-      df_filtrado,
-      x="Sales",
-      y="Profit",
-      color="Category",
-      hover_data=["Customer Name", "State"],
-      title="Dispersión: Sales vs Profit por Categoría",
-      labels={"Sales": "Ventas ($)", "Profit": "Ganancias ($)"},
-      opacity=0.6,
-  )
-  st.plotly_chart(fig_scatter, use_container_width=True)
+  with col_left:
+    st.subheader("Evolución de Ventas en el Tiempo")
+    df_trend = (
+        df_filtrado.resample("ME", on="Order Date")[["Sales", "Profit"]]
+        .sum()
+        .reset_index()
+    )
+    fig_trend = px.line(
+        df_trend,
+        x="Order Date",
+        y=["Sales", "Profit"],
+        labels={"value": "Monto ($)", "Order Date": "Fecha"},
+        title="Tendencia Mensual de Ventas y Ganancias",
+        color_discrete_sequence=["royalblue", "forestgreen"],
+    )
+    st.plotly_chart(fig_trend, use_container_width=True)
 
-col_bottom1, col_bottom2 = st.columns(2)
+  with col_right:
+    st.subheader("Relación de Ventas vs Ganancia por Transacción")
+    fig_scatter = px.scatter(
+        df_filtrado,
+        x="Sales",
+        y="Profit",
+        color="Category",
+        hover_data=["Customer Name", "State"],
+        title="Dispersión: Sales vs Profit por Categoría",
+        labels={"Sales": "Ventas ($)", "Profit": "Ganancias ($)"},
+        opacity=0.6,
+    )
+    st.plotly_chart(fig_scatter, use_container_width=True)
 
-with col_bottom1:
-  st.subheader("Ventas por Estado")
-  df_state = (
-      df_filtrado.groupby("State")["Sales"]
-      .sum()
-      .reset_index()
-      .sort_values(by="Sales", ascending=False)
-      .head(10)
-  )
-  fig_state = px.bar(
-      df_state,
-      x="Sales",
-      y="State",
-      orientation="h",
-      title="Top 10 Estados con más Ventas",
-      labels={"Sales": "Total Ventas ($)", "State": "Estado"},
-      color="Sales",
-      color_continuous_scale="Blues",
-  )
-  st.plotly_chart(fig_state, use_container_width=True)
+  col_bottom1, col_bottom2 = st.columns(2)
 
-with col_bottom2:
-  st.subheader("Ventas por Categoría y Sub-Categoría")
-  fig_sunburst = px.sunburst(
-      df_filtrado,
-      path=["Category", "Sub-Category"],
-      values="Sales",
-      title="Distribución de Ventas por Categorías",
-      color="Sales",
-      color_continuous_scale="YlOrRd",
-  )
-  st.plotly_chart(fig_sunburst, use_container_width=True)
+  with col_bottom1:
+    st.subheader("Ventas por Estado")
+    df_state = (
+        df_filtrado.groupby("State")["Sales"]
+        .sum()
+        .reset_index()
+        .sort_values(by="Sales", ascending=False)
+        .head(10)
+    )
+    fig_state = px.bar(
+        df_state,
+        x="Sales",
+        y="State",
+        orientation="h",
+        title="Top 10 Estados con más Ventas",
+        labels={"Sales": "Total Ventas ($)", "State": "Estado"},
+        color="Sales",
+        color_continuous_scale="Blues",
+    )
+    st.plotly_chart(fig_state, use_container_width=True)
+
+  with col_bottom2:
+    st.subheader("Ventas por Categoría y Sub-Categoría")
+    fig_sunburst = px.sunburst(
+        df_filtrado,
+        path=["Category", "Sub-Category"],
+        values="Sales",
+        title="Distribución de Ventas por Categorías",
+        color="Sales",
+        color_continuous_scale="YlOrRd",
+    )
+    st.plotly_chart(fig_sunburst, use_container_width=True)
+
+with mapa_ventas_tab:
+  if df_filtrado.empty:
+    st.warning("No hay datos para mostrar en el mapa de ventas con los filtros actuales.")
+  else:
+    st.subheader("Top 10 estados con más ventas")
+    df_top_states = (
+        df_filtrado.groupby("State", as_index=False)["Sales"]
+        .sum()
+        .sort_values("Sales", ascending=False)
+        .head(10)
+    )
+
+    fig_map = px.bar(
+        df_top_states,
+        x="Sales",
+        y="State",
+        orientation="h",
+        title="Top 10 Estados con más Ventas",
+        labels={"State": "Estado", "Sales": "Ventas Totales ($)"},
+        color="Sales",
+        color_continuous_scale="Viridis",
+    )
+    fig_map.update_layout(
+        yaxis={"categoryorder": "total descending"},
+        height=700,
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
+
+    st.caption("Gráfico de barras de los 10 estados con mayor volumen de ventas según los filtros actuales.")
+
