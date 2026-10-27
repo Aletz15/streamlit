@@ -48,7 +48,9 @@ regiones_selected = st.sidebar.multiselect(
 df_filtrado = df[(df['Order Date'] >= start_date) & (df['Order Date'] <= end_date) & (df['Region'].isin(regiones_selected))]
 
 estados = sorted(df_filtrado['State'].unique())
-estados_selected = st.sidebar.multiselect("Selecciona el/los Estado(s):", opciones=estados, default=estados)
+estados_selected = st.sidebar.multiselect(
+    "Selecciona el/los Estado(s):", options=estados, default=estados
+)
 
 # Aplicar filtro final de Estado
 df_filtrado = df_filtrado[df_filtrado['State'].isin(estados_selected)]
