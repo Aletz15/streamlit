@@ -40,7 +40,9 @@ start_date, end_date = st.sidebar.slider(
 
 # Filtro de Región
 regiones = sorted(df['Region'].unique())
-regiones_selected = st.sidebar.multiselect("Selecciona la(s) Región(es):", opciones=regiones, default=regiones)
+regiones_selected = st.sidebar.multiselect(
+    "Selecciona la(s) Región(es):", options=regiones, default=regiones
+)
 
 # Filtro de Estado (Dinámico según Región)
 df_filtrado = df[(df['Order Date'] >= start_date) & (df['Order Date'] <= end_date) & (df['Region'].isin(regiones_selected))]
