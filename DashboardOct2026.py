@@ -135,7 +135,7 @@ def metric_card(title, value):
 
 
 # Pestañas de navegación
-principal_tab, mapa_ventas_tab = st.tabs(["Dashboard", "mapa de ventas"])
+principal_tab, mapa_ventas_tab = st.tabs(["Dashboard", "mapa ventas por estado"])
 
 with principal_tab:
   if not df_filtrado.empty:
@@ -238,28 +238,60 @@ with mapa_ventas_tab:
   if df_filtrado.empty:
     st.warning("No hay datos para mostrar en el mapa de ventas con los filtros actuales.")
   else:
-    st.subheader("Top 10 estados con más ventas")
-    df_top_states = (
+    state_abbr = {
+      "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
+      "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+      "Florida": "FL", "Georgia": "GA", "Hawaii": "HI", "Idaho": "ID",
+      "Illinois": "IL", "Indiana": "IN", "Iowa": "IA", "Kansas": "KS",
+      "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
+      "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS",
+      "Missouri": "MO", "Montana": "MT", "Nebraska": "NE", "Nevada": "NV",
+      "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+      "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK",
+      "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
+      "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT",
+      "Vermont": "VT", "Virginia": "VA", "Washington": "WA", "West Virginia": "WV",
+      "Wisconsin": "WI", "Wyoming": "WY", "District of Columbia": "DC"
+    }
+
+    df_state_map = (
         df_filtrado.groupby("State", as_index=False)["Sales"]
         .sum()
-        .sort_values("Sales", ascending=False)
-        .head(10)
+        .rename(columns={"State": "Estado", "Sales": "Ventas"})
     )
+    df_state_map["Estado"] = df_state_map["Estado"].astype(str)
+    df_state_map["State Abbr"] = df_state_map["Estado"].map(state_abbr)
+    df_state_map = df_state_map.dropna(subset=["State Abbr"]).sort_values("Ventas", ascending=False)
 
-    fig_map = px.bar(
-        df_top_states,
-        x="Sales",
-        y="State",
-        orientation="h",
-        title="Top 10 Estados con más Ventas",
-        labels={"State": "Estado", "Sales": "Ventas Totales ($)"},
-        color="Sales",
-        color_continuous_scale="Viridis",
-    )
-    fig_map.update_layout(
-        yaxis={"categoryorder": "total descending"},
-        height=700,
-    )
-    st.plotly_chart(fig_map, use_container_width=True)
+    if df_state_map.empty:
+      st.warning("No hay estados válidos para visualizar en el mapa.")
+    else:
+      st.subheader("Ventas Totales por Estado")
+      fig_map = px.choropleth(
+          df_state_map,
+          locations="State Abbr",
+          locationmode="USA-states",
+          color="Ventas",
+          scope="usa",
+          hover_name="Estado",
+          hover_data={"State Abbr": False, "Ventas": ":,.2f"},
+          labels={"Ventas": "Ventas"},
+          color_continuous_scale="Plasma",
+      )
+      fig_map.update_layout(
+          title=None,
+          margin=dict(l=10, r=10, t=10, b=10),
+          height=620,
+          paper_bgcolor="#f5f5f5",
+          geo=dict(bgcolor="#f5f5f5", lakecolor="#f5f5f5", showlakes=False),
+      )
+      fig_map.update_coloraxes(colorbar_title="Ventas")
+      st.plotly_chart(fig_map, use_container_width=True)
 
-    st.caption("Gráfico de barras de los 10 estados con mayor volumen de ventas según los filtros actuales.")
+      st.markdown("---")
+      st.subheader("Tabla de ventas por estado")
+      df_table = df_state_map[["Estado", "Ventas"]].rename(columns={"Estado": "State", "Ventas": "Ventas"})
+      df_table = df_table.sort_values("Ventas", ascending=False).reset_index(drop=True)
+      st.dataframe(df_table, use_container_width=True, hide_index=True)
+
+      st.caption("Mapa y tabla de ventas por estado según los filtros actuales.")
