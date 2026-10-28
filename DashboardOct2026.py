@@ -289,9 +289,34 @@ with mapa_ventas_tab:
       st.plotly_chart(fig_map, use_container_width=True)
 
       st.markdown("---")
+
+      st.subheader("Top 10 estados con más ventas")
+      df_top_states = (
+          df_state_map.groupby("Estado", as_index=False)["Ventas"]
+          .sum()
+          .sort_values("Ventas", ascending=False)
+          .head(10)
+      )
+      fig_bar = px.bar(
+          df_top_states,
+          x="Ventas",
+          y="Estado",
+          orientation="h",
+          title="Top 10 Estados con más Ventas",
+          labels={"Estado": "Estado", "Ventas": "Ventas Totales ($)"},
+          color="Ventas",
+          color_continuous_scale="Viridis",
+      )
+      fig_bar.update_layout(
+          yaxis={"categoryorder": "total descending"},
+          height=700,
+      )
+      st.plotly_chart(fig_bar, use_container_width=True)
+
+      st.markdown("---")
       st.subheader("Tabla de ventas por estado")
       df_table = df_state_map[["Estado", "Ventas"]].rename(columns={"Estado": "State", "Ventas": "Ventas"})
       df_table = df_table.sort_values("Ventas", ascending=False).reset_index(drop=True)
       st.dataframe(df_table, use_container_width=True, hide_index=True)
 
-      st.caption("Mapa y tabla de ventas por estado según los filtros actuales.")
+      st.caption("Mapa, gráfica de barras y tabla de ventas por estado según los filtros actuales.")
